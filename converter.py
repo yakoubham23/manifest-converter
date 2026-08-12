@@ -201,7 +201,7 @@ def process_vehicle(vehicle_file, output_file, vessel_name='', company_name='', 
     if ws.max_row >= 4:
         ws.delete_rows(4, ws.max_row - 3)
         
-    headers_veh = ['N°', 'Nom', 'Prénom', 'N° Véhicule', 'Marque', 'Modèle de véhicule', 'Genre', 'Lieu de départ', "Lieu d'arrivée"]
+    headers_veh = ['N°', 'Nom', 'Prénom', 'N° Véhicule', 'Marque', 'Modèle de véhicule', 'Genre', 'Lieu de départ', "Lieu d'arrivée", 'N° billet']
     for c, h in enumerate(headers_veh, 1):
         ws.cell(row=2, column=c).value = h
         
