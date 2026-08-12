@@ -284,7 +284,8 @@ def process_vehicle(vehicle_file, output_file, vessel_name='', company_name='', 
                 'prenom_prop': prenom_prop,
                 'reg_num': reg_num,
                 'make': make,
-                'model': model
+                'model': model,
+                'booking_id': booking_id
             }
             if booking_id not in vehicles_grouped:
                 vehicles_grouped[booking_id] = []
@@ -315,7 +316,8 @@ def process_vehicle(vehicle_file, output_file, vessel_name='', company_name='', 
                     v['model'],       
                     v['vhl_rmq'],     
                     port_dep,   
-                    port_arr,     
+                    port_arr,
+                    v['booking_id']
                 ])
                 counter += 1
 
@@ -330,6 +332,7 @@ def process_vehicle(vehicle_file, output_file, vessel_name='', company_name='', 
             chassis     = _clean_val(row.get('First Primary Vehicle VIN Number', ''))
             marque      = _clean_val(row.get('Category Code', ''))
             modele      = _clean_val(row.get('Category Name', ''))
+            booking_id  = _clean_val(row.get('Booking Code', ''))
 
             cat_upper = str(marque).strip().upper()
             if cat_upper in ('TRA1', 'TRA2', 'REM3'):
@@ -347,7 +350,8 @@ def process_vehicle(vehicle_file, output_file, vessel_name='', company_name='', 
                 'reg_num': veh_num,
                 'chassis': chassis,
                 'make': marque,
-                'model': modele
+                'model': modele,
+                'booking_id': booking_id
             }
             if group_key not in vehicles_grouped:
                 vehicles_grouped[group_key] = []
@@ -377,7 +381,8 @@ def process_vehicle(vehicle_file, output_file, vessel_name='', company_name='', 
                     v['model'],       
                     v['vhl_rmq'],     
                     port_dep,
-                    port_arr
+                    port_arr,
+                    v['booking_id']
                 ])
                 counter += 1
 
