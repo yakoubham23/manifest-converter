@@ -66,6 +66,7 @@ else:
     with tab1:
         st.header("Conversion du Manifeste Passagers (PAF)")
         passenger_file = st.file_uploader("Importer le Manifeste des Passagers (.xlsx)", type=["xlsx"], key="pass_f")
+        filter_checked_in = st.checkbox("Ne gnrer que les passagers enregistrs (Checked-In = True)", value=False, key="filt_paf_p")
         col1, col2, col3 = st.columns(3)
         with col1:
             comp_pass = st.text_input("Compagnie", value="NOURIS EL BAHR FERRIES", key="comp_p")
@@ -87,7 +88,7 @@ else:
 
                 try:
                     with st.spinner("Conversion en cours..."):
-                        process_passenger(pass_path, output_path, vessel_name=vess_pass, company_name=comp_pass, date_dep=date_pass)
+                        process_passenger(pass_path, output_path, vessel_name=vess_pass, company_name=comp_pass, date_dep=date_pass, filter_checked_in=filter_checked_in)
                     st.success(f"✅ Conversion réussie ! {passenger_file.name} converti au {format_mode}.")
 
                     with open(output_path, "rb") as f:

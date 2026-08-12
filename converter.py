@@ -80,7 +80,7 @@ def _clean_val(val):
     return val
 
 
-def process_passenger(passenger_file, output_file, vessel_name='', company_name='', date_dep=''):
+def process_passenger(passenger_file, output_file, vessel_name='', company_name='', date_dep='', filter_checked_in=False):
     shutil.copy(TEMPLATE_PASSENGER, output_file)
     wb = openpyxl.load_workbook(output_file)
     ws = wb.active
@@ -127,6 +127,12 @@ def process_passenger(passenger_file, output_file, vessel_name='', company_name=
         from_port   = _clean_val(row.get('From Port UN/LOCODE', ''))
         to_port     = _clean_val(row.get('To Port UN/LOCODE', ''))
         billet      = _clean_val(row.get('Booking Code', ''))
+        
+        checked_in_raw = str(row.get('Checked-In', '')).strip().upper()
+        is_checked_in = checked_in_raw in ('TRUE', 'YES', 'Y', '1')
+        
+        if filter_checked_in and not is_checked_in:
+            continue
 
         ws.append([
             counter,
