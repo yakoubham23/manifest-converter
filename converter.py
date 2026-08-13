@@ -46,6 +46,17 @@ def _insert_header(ws, text, logo_path, max_col):
 
 
 
+
+def _apply_borders(ws):
+    from openpyxl.styles import Border, Side
+    thin_border = Border(left=Side(style='thin'),
+                         right=Side(style='thin'),
+                         top=Side(style='thin'),
+                         bottom=Side(style='thin'))
+    for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
+        for cell in row:
+            cell.border = thin_border
+
 def _autofit_columns(ws):
     import openpyxl
     for col in ws.columns:
@@ -181,6 +192,7 @@ def process_passenger(passenger_file, output_file, vessel_name='', company_name=
     logo_path = os.path.join(os.path.dirname(__file__), "image.png")
     _insert_header(ws, header_text, logo_path, len(headers_pass))
 
+    _apply_borders(ws)
     _autofit_columns(ws)
     wb.save(output_file)
     return output_file
@@ -431,6 +443,7 @@ def process_vehicle(vehicle_file, output_file, vessel_name='', company_name='', 
     logo_path = os.path.join(os.path.dirname(__file__), "image.png")
     _insert_header(ws, header_text, logo_path, len(headers_veh))
 
+    _apply_borders(ws)
     _autofit_columns(ws)
     wb.save(output_file)
     return output_file
