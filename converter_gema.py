@@ -29,7 +29,7 @@ def _autofit_columns_gema(ws):
             except:
                 pass
         
-        adjusted_width = (max_length + 2) * 1.15
+        adjusted_width = max_length + 1.5
         adjusted_width = min(max(adjusted_width, 15), 50)
         
         current_width = ws.column_dimensions[col_letter].width
