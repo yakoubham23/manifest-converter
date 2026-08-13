@@ -7,9 +7,9 @@ from converter_gema import process_gema_passenger, process_gema_vehicle, process
 st.set_page_config(page_title="Convertisseur PSC APIS", layout="wide")
 
 st.title("🚢 Convertisseur Excel PSC APIS")
-st.markdown("Convertit les manifestes de passagers et de véhicules au format PSC APIS demandé.")
+st.markdown("Convertir les manifestes de passagers et de véhicules au format PSC APIS demandé.")
 
-format_mode = st.radio("Sélectionnez le format de destination :", ["Format Standard (PAF)", "Format GEMA"], horizontal=True)
+format_mode = st.radio("Sélectionner le format de destination :", ["Format Standard (PAF)", "Format GEMA"], horizontal=True)
 
 if format_mode == "Format GEMA":
     st.header("Conversion GEMA (Passagers & Véhicules)")
@@ -19,7 +19,7 @@ if format_mode == "Format GEMA":
     col_p, col_v = st.columns(2)
     with col_p:
         passenger_file = st.file_uploader("1. Importer le Manifeste des Passagers (.xlsx)", type=["xlsx"], key="gema_pass_f")
-        filter_present_y = st.checkbox("Filtre Présenté Uniquement 'Y'", value=False, key="filt_p_gema")
+        filter_present_y = st.checkbox("Filtrer uniquement les passagers présents ('Y')", value=False, key="filt_p_gema")
     with col_v:
         vehicle_file = st.file_uploader("2. Importer le Manifeste des Véhicules (.xlsx ou .xls)", type=["xlsx", "xls"], key="gema_veh_f")
 
@@ -66,7 +66,7 @@ else:
     with tab1:
         st.header("Conversion du Manifeste Passagers (PAF)")
         passenger_file = st.file_uploader("Importer le Manifeste des Passagers (.xlsx)", type=["xlsx"], key="pass_f")
-        filter_checked_in = st.checkbox("Ne gnrer que les passagers enregistrs (Checked-In = True)", value=False, key="filt_paf_p")
+        filter_checked_in = st.checkbox("Générer uniquement les passagers enregistrés (Checked-In = True)", value=False, key="filt_paf_p")
         col1, col2, col3 = st.columns(3)
         with col1:
             comp_pass = st.text_input("Compagnie", value="NOURIS EL BAHR FERRIES", key="comp_p")
