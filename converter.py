@@ -76,7 +76,7 @@ def _autofit_columns(ws):
                 pass
         
         adjusted_width = (max_length + 2) * 1.15
-        adjusted_width = min(max(adjusted_width, 12), 45)
+        adjusted_width = min(max(adjusted_width, 6), 45)
         
         current_width = ws.column_dimensions[col_letter].width
         if current_width and current_width > adjusted_width:
