@@ -275,7 +275,7 @@ def process_vehicle(vehicle_file, output_file, vessel_name='', company_name='', 
             reg_num   = clean(row.iloc[col_reg])   if col_reg  is not None else ''
             full_name = clean(row.iloc[col_name])  if col_name is not None else ''
 
-            if reg_num == '' and make == '' and full_name == '':
+            if reg_num == '' and full_name == '' and booking_id == '':
                 continue
 
             parts       = full_name.rsplit(' ', 1)

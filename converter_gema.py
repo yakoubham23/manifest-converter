@@ -199,7 +199,7 @@ def process_gema_vehicle(vehicle_file, passenger_file, output_file):
             reg_num   = _clean_val(row.iloc[col_reg])     if col_reg is not None else ''
             full_name = _clean_val(row.iloc[col_name])    if col_name is not None else ''
             
-            if reg_num == '' and make == '' and full_name == '':
+            if reg_num == '' and full_name == '' and booking_id == '':
                 continue
                 
             parts = full_name.rsplit(' ', 1)
@@ -397,7 +397,7 @@ def process_gema_full(passenger_file, vehicle_file, output_file, filter_present_
             reg_num   = _clean_val(row.iloc[col_reg])     if col_reg is not None else ''
             full_name = _clean_val(row.iloc[col_name])    if col_name is not None else ''
             
-            if reg_num == '' and make == '' and full_name == '':
+            if reg_num == '' and full_name == '' and booking_id == '':
                 continue
                 
             parts = full_name.rsplit(' ', 1)
