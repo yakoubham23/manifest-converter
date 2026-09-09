@@ -237,10 +237,14 @@ def process_gema_vehicle(vehicle_file, passenger_file, output_file):
             else:
                 v09 = ''
             
-            # RMQ → copy parent vehicle plate in N° véhicule and N° châssis
+            # RMQ → keep own plate if not empty, else copy parent VHL plate
             if v02 == 'RMQ':
-                v05 = last_vhl_reg
-                v06 = last_vhl_reg
+                if reg_num:
+                    v05 = reg_num
+                    v06 = reg_num
+                else:
+                    v05 = last_vhl_reg
+                    v06 = last_vhl_reg
             else:
                 v05 = reg_num
                 v06 = reg_num
@@ -478,10 +482,14 @@ def process_gema_full(passenger_file, vehicle_file, output_file, filter_present_
             else:
                 v09 = ''
             
-            # RMQ → copy parent VHL plate into N° véhicule and N° châssis
+            # RMQ → keep own plate if not empty, else copy parent VHL plate
             if v02 == 'RMQ':
-                v05 = last_vhl_reg
-                v06 = last_vhl_reg
+                if reg_num:
+                    v05 = reg_num
+                    v06 = reg_num
+                else:
+                    v05 = last_vhl_reg
+                    v06 = last_vhl_reg
             else:
                 v05 = reg_num
                 v06 = reg_num
