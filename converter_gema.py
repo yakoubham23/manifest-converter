@@ -233,17 +233,27 @@ def process_gema_vehicle(vehicle_file, passenger_file, output_file):
             v03 = nom_prop
             v04 = prenom_prop
             
-            # Make: B999 fallback if not found in dict
+           
+
             make_lower = make.lower()
-            v07 = make_dict.get(make_lower, None)
-            if v07 is None:
-                v07 = 'B999'
-            
-            # Model: B999M0001 fallback if not found in dict
             model_lower = model.lower()
+
+            v07 = make_dict.get(make_lower, None)
             v08 = model_dict.get(model_lower, None)
-            if v08 is None:
+
+            # Si marque inconnue OU modèle inconnu
+            if v07 is None or v08 is None:
+                v07 = 'B999'
                 v08 = 'B999M0001'
+
+# Si le modèle appartient à une autre marque
+            elif not v08.upper().startswith(v07.upper() + 'M'):
+                v07 = 'B999'
+                v08 = 'B999M0001'
+
+
+
+            
             
             # BIKE → type = VHL, genre = 09
             if v02 == 'BIKE':
