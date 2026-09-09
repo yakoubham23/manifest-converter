@@ -187,7 +187,21 @@ def process_gema_vehicle(vehicle_file, passenger_file, output_file):
                     elif ('VMA12' in v or 'NAME' in v) and col_name is None: col_name = c_idx
                 break
                 
-        last_vhl_reg = ''
+        # --- 1st pass: build booking_id -> VHL plate dict ---
+        bid_to_vhl_plate = {}
+        for ri in range(header_row_idx + 2, len(df)):
+            row = df.iloc[ri]
+            row_str = ' '.join([_clean_val(v) for v in row.tolist()])
+            if 'VMA' in row_str: continue
+            r_bid     = _clean_val(row.iloc[col_booking]) if col_booking is not None else ''
+            r_cat     = _clean_val(row.iloc[col_cat])     if col_cat is not None else ''
+            r_reg     = _clean_val(row.iloc[col_reg])     if col_reg is not None else ''
+            r_cat_up  = r_cat.upper()
+            is_vhl    = r_cat_up not in ('TRA1', 'TRA2', 'REM3', 'BIKE', 'MOTO', 'MOTOC', 'MOTOB', 'MOTOS')
+            if is_vhl and r_bid and r_reg:
+                bid_to_vhl_plate[r_bid] = r_reg
+
+        # --- 2nd pass: write rows ---
         for ri in range(header_row_idx + 2, len(df)):
             row = df.iloc[ri]
             row_str = ' '.join([_clean_val(v) for v in row.tolist()])
@@ -219,12 +233,13 @@ def process_gema_vehicle(vehicle_file, passenger_file, output_file):
             v03 = nom_prop
             v04 = prenom_prop
             
-            # Mappings for make and model — fallback to B999/B999M0001 if not found
+            # Make: B999 fallback if not found in dict
             make_lower = make.lower()
             v07 = make_dict.get(make_lower, None)
             if v07 is None:
                 v07 = 'B999'
             
+            # Model: B999M0001 fallback if not found in dict
             model_lower = model.lower()
             v08 = model_dict.get(model_lower, None)
             if v08 is None:
@@ -237,19 +252,18 @@ def process_gema_vehicle(vehicle_file, passenger_file, output_file):
             else:
                 v09 = ''
             
-            # RMQ → keep own plate if not empty, else copy parent VHL plate
+            # RMQ → use own plate if not empty, else look up VHL plate via booking_id
             if v02 == 'RMQ':
                 if reg_num:
                     v05 = reg_num
                     v06 = reg_num
                 else:
-                    v05 = last_vhl_reg
-                    v06 = last_vhl_reg
+                    vhl_plate = bid_to_vhl_plate.get(b_id, '')
+                    v05 = vhl_plate
+                    v06 = vhl_plate
             else:
                 v05 = reg_num
                 v06 = reg_num
-                if v02 == 'VHL':
-                    last_vhl_reg = reg_num  # track for next RMQ
             
             v10 = ''
             
@@ -408,7 +422,21 @@ def process_gema_full(passenger_file, vehicle_file, output_file, filter_present_
                     elif ('VMA12' in v or 'NAME' in v) and col_name is None: col_name = c_idx
                 break
                 
-        last_vhl_reg = ''
+        # --- 1st pass: build booking_id -> VHL plate dict ---
+        bid_to_vhl_plate = {}
+        for ri in range(header_row_idx + 2, len(df)):
+            row = df.iloc[ri]
+            row_str = ' '.join([_clean_val(v) for v in row.tolist()])
+            if 'VMA' in row_str: continue
+            r_bid    = _clean_val(row.iloc[col_booking]) if col_booking is not None else ''
+            r_cat    = _clean_val(row.iloc[col_cat])     if col_cat is not None else ''
+            r_reg    = _clean_val(row.iloc[col_reg])     if col_reg is not None else ''
+            r_cat_up = r_cat.upper()
+            is_vhl   = r_cat_up not in ('TRA1', 'TRA2', 'REM3', 'BIKE', 'MOTO', 'MOTOC', 'MOTOB', 'MOTOS')
+            if is_vhl and r_bid and r_reg:
+                bid_to_vhl_plate[r_bid] = r_reg
+
+        # --- 2nd pass: write rows ---
         for ri in range(header_row_idx + 2, len(df)):
             row = df.iloc[ri]
             row_str = ' '.join([_clean_val(v) for v in row.tolist()])
@@ -482,19 +510,18 @@ def process_gema_full(passenger_file, vehicle_file, output_file, filter_present_
             else:
                 v09 = ''
             
-            # RMQ → keep own plate if not empty, else copy parent VHL plate
+            # RMQ → use own plate if not empty, else look up VHL plate via booking_id
             if v02 == 'RMQ':
                 if reg_num:
                     v05 = reg_num
                     v06 = reg_num
                 else:
-                    v05 = last_vhl_reg
-                    v06 = last_vhl_reg
+                    vhl_plate = bid_to_vhl_plate.get(b_id, '')
+                    v05 = vhl_plate
+                    v06 = vhl_plate
             else:
                 v05 = reg_num
                 v06 = reg_num
-                if v02 == 'VHL':
-                    last_vhl_reg = reg_num  # remember for next RMQ
             
             v10 = ''
             
