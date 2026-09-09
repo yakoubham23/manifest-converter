@@ -187,6 +187,7 @@ def process_gema_vehicle(vehicle_file, passenger_file, output_file):
                     elif ('VMA12' in v or 'NAME' in v) and col_name is None: col_name = c_idx
                 break
                 
+        last_vhl_reg = ''
         for ri in range(header_row_idx + 2, len(df)):
             row = df.iloc[ri]
             row_str = ' '.join([_clean_val(v) for v in row.tolist()])
@@ -217,17 +218,35 @@ def process_gema_vehicle(vehicle_file, passenger_file, output_file):
             
             v03 = nom_prop
             v04 = prenom_prop
-            v05 = reg_num
-            v06 = reg_num # Dupliquer
             
-            # Mappings for make and model
+            # Mappings for make and model — fallback to B999/B999M0001 if not found
             make_lower = make.lower()
-            v07 = make_dict.get(make_lower, make) # fallback to text if not found
+            v07 = make_dict.get(make_lower, None)
+            if v07 is None:
+                v07 = 'B999'
             
             model_lower = model.lower()
-            v08 = model_dict.get(model_lower, model) # fallback to text if not found
+            v08 = model_dict.get(model_lower, None)
+            if v08 is None:
+                v08 = 'B999M0001'
             
-            v09 = ''
+            # BIKE → type = VHL, genre = 09
+            if v02 == 'BIKE':
+                v02 = 'VHL'
+                v09 = '09'
+            else:
+                v09 = ''
+            
+            # RMQ → copy parent vehicle plate in N° véhicule and N° châssis
+            if v02 == 'RMQ':
+                v05 = last_vhl_reg
+                v06 = last_vhl_reg
+            else:
+                v05 = reg_num
+                v06 = reg_num
+                if v02 == 'VHL':
+                    last_vhl_reg = reg_num  # track for next RMQ
+            
             v10 = ''
             
             ws.append([v01, v02, v03, v04, v05, v06, v07, v08, v09, v10])
@@ -385,6 +404,7 @@ def process_gema_full(passenger_file, vehicle_file, output_file, filter_present_
                     elif ('VMA12' in v or 'NAME' in v) and col_name is None: col_name = c_idx
                 break
                 
+        last_vhl_reg = ''
         for ri in range(header_row_idx + 2, len(df)):
             row = df.iloc[ri]
             row_str = ' '.join([_clean_val(v) for v in row.tolist()])
@@ -438,68 +458,36 @@ def process_gema_full(passenger_file, vehicle_file, output_file, filter_present_
             
             v03 = nom_prop
             v04 = prenom_prop
-            v05 = reg_num
-            v06 = reg_num
             
+            # Make: B999 fallback if not found in dict
             make_lower = make.lower()
-            v07 = make_dict.get(make_lower, make)
+            v07 = make_dict.get(make_lower, None)
+            if v07 is None:
+                v07 = 'B999'
             
-            # Fuzzy fallback for make
-            if v07 == make:
-                make_cleaned = make.lower().replace('-', ' ').strip()
-                for m_name, m_code in make_dict.items():
-                    if make_cleaned in m_name or m_name in make_cleaned:
-                        v07 = m_code
-                        break
-                    if 'mercedes' in make_cleaned and 'mercedes' in m_name:
-                        v07 = m_code
-                        break
-                    if 'vw' in make_cleaned and 'volkswagen' in m_name:
-                        v07 = m_code
-                        break
-            if v07 == make: v07 = make.upper()
-            
+            # Model: B999M0001 fallback if not found in dict
             model_lower = model.lower()
-            v08 = model_dict.get(model_lower, model)
+            v08 = model_dict.get(model_lower, None)
+            if v08 is None:
+                v08 = 'B999M0001'
             
-            # Fuzzy fallback for model
-            if v08 == model:
-                mod_cleaned = model.lower().replace('-', ' ').strip()
-                
-                # Check models under the same manufacturer code first
-                found = False
-                for m_name, m_code in model_dict.items():
-                    if v07 and m_code.startswith(v07):
-                        if mod_cleaned == m_name or mod_cleaned in m_name.split():
-                            v08 = m_code
-                            found = True
-                            break
-                        if f"classe {mod_cleaned.replace('class', '').strip()}" in m_name:
-                            v08 = m_code
-                            found = True
-                            break
-                        if f"serie {mod_cleaned.replace('series', '').strip()}" in m_name:
-                            v08 = m_code
-                            found = True
-                            break
-                            
-                if not found:
-                    for m_name, m_code in model_dict.items():
-                        if v07 and m_code.startswith(v07):
-                            if mod_cleaned in m_name:
-                                v08 = m_code
-                                found = True
-                                break
-                                
-                if not found:
-                    for m_name, m_code in model_dict.items():
-                        if mod_cleaned == m_name or mod_cleaned in m_name.split():
-                            v08 = m_code
-                            break
-                            
-            if v08 == model: v08 = model.upper()
+            # BIKE → treated as VHL with genre = 09
+            if v02 == 'BIKE':
+                v02 = 'VHL'
+                v09 = '09'
+            else:
+                v09 = ''
             
-            v09 = ''
+            # RMQ → copy parent VHL plate into N° véhicule and N° châssis
+            if v02 == 'RMQ':
+                v05 = last_vhl_reg
+                v06 = last_vhl_reg
+            else:
+                v05 = reg_num
+                v06 = reg_num
+                if v02 == 'VHL':
+                    last_vhl_reg = reg_num  # remember for next RMQ
+            
             v10 = ''
             
             ws_veh.append([v01, v02, v03, v04, v05, v06, v07, v08, v09, v10])
