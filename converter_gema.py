@@ -43,6 +43,75 @@ def _unmerge_all(ws):
         for range_ in list(ws.merged_cells.ranges):
             ws.unmerge_cells(str(range_))
 
+
+# ------------------------------------------------------------------
+# CORRECTIF : construction des dictionnaires Marque / Modèle
+# ------------------------------------------------------------------
+# Avant : model_dict était indexé UNIQUEMENT par le nom du modèle
+# (model_dict[c9] = c7). Si deux marques différentes avaient un
+# modèle portant le même nom (ou un nom proche) dans le sheet "Code",
+# la dernière ligne lue écrasait silencieusement les précédentes,
+# et le modèle renvoyé pouvait appartenir à une AUTRE marque que
+# celle réellement recherchée.
+#
+# Correctif : model_dict est maintenant indexé par un TUPLE
+# (code_marque, nom_modèle_en_minuscule). Le code_marque est déduit
+# du code modèle lui-même (format "B057M0035" -> préfixe "B057"),
+# donc aucune colonne supplémentaire n'est nécessaire côté template.
+# Ça élimine les collisions entre marques différentes.
+# ------------------------------------------------------------------
+def _build_make_model_dicts(code_ws):
+    make_dict = {}
+    model_dict = {}
+
+    for i in range(1, code_ws.max_row + 1):
+        c1 = str(code_ws.cell(i, 1).value).strip()
+        c7 = str(code_ws.cell(i, 7).value).strip()
+        c9 = str(code_ws.cell(i, 9).value).strip().lower()
+
+        c1_lower = c1.lower()
+        if 'fabricant' in c1_lower or 'make' in c1_lower or 'marque' in c1_lower:
+            make_dict[c9] = c7
+        elif 'modèle' in c1_lower or 'modele' in c1_lower or 'model' in c1_lower:
+            # Le code modèle est toujours de la forme "<CODE_MARQUE>M<xxxx>"
+            marque_prefix = c7.split('M')[0].strip().upper() if 'M' in c7 else ''
+            model_dict[(marque_prefix, c9)] = c7
+
+    return make_dict, model_dict
+
+
+# ------------------------------------------------------------------
+# CORRECTIF : résolution Marque/Modèle unifiée
+# ------------------------------------------------------------------
+# Avant, process_gema_vehicle() et process_gema_full() avaient CHACUNE
+# leur propre logique, légèrement différente :
+#   - process_gema_vehicle vérifiait bien que le modèle appartenait à
+#     la marque trouvée (via startswith), et remettait les DEUX à B999
+#     en cas d'incohérence.
+#   - process_gema_full cherchait la marque et le modèle indépendamment,
+#     sans aucune vérification croisée -> un modèle pouvait être
+#     silencieusement associé à la mauvaise marque.
+# Résultat observé : selon la fonction utilisée pour générer le
+# fichier, le comportement Marque/Modèle changeait (instabilité déjà
+# constatée en comparant plusieurs exports).
+#
+# Correctif : une seule fonction _resolve_make_model() est utilisée
+# partout, avec la même règle de cohérence marque<->modèle.
+# ------------------------------------------------------------------
+def _resolve_make_model(make, model, make_dict, model_dict):
+    make_lower = make.lower()
+    model_lower = model.lower()
+
+    v07 = make_dict.get(make_lower, None)
+    v08 = model_dict.get((v07.upper() if v07 else '', model_lower), None) if v07 else None
+
+    # Marque inconnue OU modèle introuvable pour cette marque
+    if v07 is None or v08 is None:
+        return 'B999', 'B999M0001'
+
+    return v07, v08
+
+
 def process_gema_passenger(passenger_file, output_file, filter_present_y=False):
     wb = openpyxl.load_workbook(GEMA_TEMPLATE)
     ws = wb['Passager']
@@ -136,18 +205,7 @@ def process_gema_vehicle(vehicle_file, passenger_file, output_file):
     wb = openpyxl.load_workbook(GEMA_TEMPLATE)
     
     code_ws = wb['Code']
-    make_dict = {}
-    model_dict = {}
-    
-    for i in range(1, code_ws.max_row + 1):
-        c1 = str(code_ws.cell(i, 1).value).strip()
-        c7 = str(code_ws.cell(i, 7).value).strip()
-        c9 = str(code_ws.cell(i, 9).value).strip().lower()
-        
-        if 'fabricant' in c1.lower() or 'make' in c1.lower() or 'marque' in c1.lower():
-            make_dict[c9] = c7
-        elif 'modèle' in c1.lower() or 'modele' in c1.lower() or 'model' in c1.lower():
-            model_dict[c9] = c7
+    make_dict, model_dict = _build_make_model_dicts(code_ws)
             
     ws = wb['Véhicule']
     _unmerge_all(ws)
@@ -232,29 +290,9 @@ def process_gema_vehicle(vehicle_file, passenger_file, output_file):
             
             v03 = nom_prop
             v04 = prenom_prop
-            
-           
 
-            make_lower = make.lower()
-            model_lower = model.lower()
+            v07, v08 = _resolve_make_model(make, model, make_dict, model_dict)
 
-            v07 = make_dict.get(make_lower, None)
-            v08 = model_dict.get(model_lower, None)
-
-            # Si marque inconnue OU modèle inconnu
-            if v07 is None or v08 is None:
-                v07 = 'B999'
-                v08 = 'B999M0001'
-
-# Si le modèle appartient à une autre marque
-            elif not v08.upper().startswith(v07.upper() + 'M'):
-                v07 = 'B999'
-                v08 = 'B999M0001'
-
-
-
-            
-            
             # BIKE → type = VHL, genre = 09
             if v02 == 'BIKE':
                 v02 = 'VHL'
@@ -383,18 +421,7 @@ def process_gema_full(passenger_file, vehicle_file, output_file, filter_present_
 
     # ------------------ ONGLET VEHICULES ------------------
     code_ws = wb['Code']
-    make_dict = {}
-    model_dict = {}
-    
-    for i in range(1, code_ws.max_row + 1):
-        c1 = str(code_ws.cell(i, 1).value).strip()
-        c7 = str(code_ws.cell(i, 7).value).strip()
-        c9 = str(code_ws.cell(i, 9).value).strip().lower()
-        
-        if 'fabricant' in c1.lower() or 'make' in c1.lower() or 'marque' in c1.lower():
-            make_dict[c9] = c7
-        elif 'modèle' in c1.lower() or 'modele' in c1.lower() or 'model' in c1.lower():
-            model_dict[c9] = c7
+    make_dict, model_dict = _build_make_model_dicts(code_ws)
             
     ws_veh = wb['Véhicule']
     _unmerge_all(ws_veh)
@@ -500,18 +527,8 @@ def process_gema_full(passenger_file, vehicle_file, output_file, filter_present_
             
             v03 = nom_prop
             v04 = prenom_prop
-            
-            # Make: B999 fallback if not found in dict
-            make_lower = make.lower()
-            v07 = make_dict.get(make_lower, None)
-            if v07 is None:
-                v07 = 'B999'
-            
-            # Model: B999M0001 fallback if not found in dict
-            model_lower = model.lower()
-            v08 = model_dict.get(model_lower, None)
-            if v08 is None:
-                v08 = 'B999M0001'
+
+            v07, v08 = _resolve_make_model(make, model, make_dict, model_dict)
             
             # BIKE → treated as VHL with genre = 09
             if v02 == 'BIKE':
