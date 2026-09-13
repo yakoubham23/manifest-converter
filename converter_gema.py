@@ -98,6 +98,24 @@ def _build_make_model_dicts(code_ws):
 # Correctif : une seule fonction _resolve_make_model() est utilisée
 # partout, avec la même règle de cohérence marque<->modèle.
 # ------------------------------------------------------------------
+def _resolve_gender(gender_raw):
+    # CORRECTIF : l'ancien code faisait `'M' in gender`, hors le mot
+    # "FEMALE" contient lui-même la lettre "M" (F-E-M-A-L-E) -> tout
+    # le monde (homme ET femme) ressortait "M". On teste maintenant
+    # "FEMALE"/"F" AVANT "MALE"/"M" pour lever l'ambiguïté.
+    g = gender_raw.strip().upper()
+    if g in ('F', 'FEMALE', 'FEMME'):
+        return 'F'
+    if g in ('M', 'MALE', 'HOMME'):
+        return 'M'
+    # fallback : sous-chaîne, mais FEMALE testé en premier
+    if 'FEMALE' in g or g == 'F':
+        return 'F'
+    if 'MALE' in g or g == 'M':
+        return 'M'
+    return ''
+
+
 def _resolve_make_model(make, model, make_dict, model_dict):
     make_lower = make.lower()
     model_lower = model.lower()
@@ -147,7 +165,7 @@ def process_gema_passenger(passenger_file, output_file, filter_present_y=False):
         b03 = _clean_val(row.get(col_prenom))
         
         gender = _clean_val(row.get(col_gender)).upper()
-        b04 = 'M' if 'M' in gender else ('F' if 'F' in gender else '')
+        b04 = _resolve_gender(gender)
         
         dob = _clean_val(row.get(col_dob))
         if ' ' in dob: dob = dob.split(' ')[0]
@@ -383,7 +401,7 @@ def process_gema_full(passenger_file, vehicle_file, output_file, filter_present_
         b03 = _clean_val(row.get(col_prenom))
         
         gender = _clean_val(row.get(col_gender)).upper()
-        b04 = 'M' if 'M' in gender else ('F' if 'F' in gender else '')
+        b04 = _resolve_gender(gender)
         
         dob = _clean_val(row.get(col_dob))
         if ' ' in dob: dob = dob.split(' ')[0]
